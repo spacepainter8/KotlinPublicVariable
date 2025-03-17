@@ -16,7 +16,7 @@ dependencies {
 
 tasks.register("runApp", JavaExec::class) {
     mainClass.set("MainKt")
-    classpath = sourceSets["main"].runtimeClasspath
+    classpath = sourceSets.main.get().runtimeClasspath
     args = listOf("test.kt")
 }
 
