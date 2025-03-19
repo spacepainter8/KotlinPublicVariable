@@ -31,315 +31,175 @@ fun main(args: Array<String>) {
     }
 
 
-    val fileName = args[0]
-    val file = File(fileName)
-    if (!file.exists()) {
-        print("File does not exist")
+    val directoryName = args[0]
+    val directory = File(directoryName)
+    if (!directory.exists()) {
+        print("File/Directory does not exist")
         return
     }
 
-    val conf = CompilerConfiguration()
+
+
+    directory.walk().filter{it.name.endsWith(".kt")}.forEach{
+
+        val file = it
+
+        val fileHash = file.readBytes().contentHashCode()
+        println("File hash: $fileHash")
+
+        println("Current file is: " + it.name)
+        println()
+        println()
+        val conf = CompilerConfiguration()
+        var environment = KotlinCoreEnvironment.createForProduction(
+            Disposable { },
+            conf,
+            EnvironmentConfigFiles.JVM_CONFIG_FILES
+        )
+        val code = file.readText().replace("\r\n", "\n")
+
+
+        val psiFile: PsiFile =
+            PsiFileFactory.getInstance(environment.project).createFileFromText(file.path, KotlinLanguage.INSTANCE, code)
+
+        val kotFile: KtFile = psiFile as KtFile
 
 
 
-    var environment = KotlinCoreEnvironment.createForProduction(Disposable {  }, CompilerConfiguration(), EnvironmentConfigFiles.JVM_CONFIG_FILES)
-    val code = file.readText()
 
-    val psiFile: PsiFile = PsiFileFactory.getInstance(environment.project).createFileFromText(file.path, KotlinLanguage.INSTANCE, code)
-    val kotFile: KtFile = psiFile as KtFile
-
-    kotFile.accept(object : KtVisitorVoid() {
+        kotFile.accept(object : KtVisitorVoid() {
 
 
+            override fun visitKtFile(file: KtFile) {
+                file.acceptChildren(this)
+            }
 
-        override fun visitKtFile(file: KtFile) {
-            file.acceptChildren(this)
-        }
-
-//        override fun visitKtElement(element: KtElement) {
-//            if (element is KtDeclaration){
-//                val dcl : KtDeclaration = element
-//                if (dcl is KtClass || dcl is KtObjectDeclaration) {
-//                    var isPublic:Boolean = false
-//                    if ((dcl.firstChild is KtDeclarationModifierList && dcl.firstChild.text=="public") || dcl.firstChild !is KtDeclarationModifierList)
-//                        isPublic = true
-//                    if (isPublic) {
-//                        var hasBody = false
-//                        var i = 0
-//                        while (i < dcl.children.size) {
-//                            if (dcl.children[i] is KtClassBody){
-//                                hasBody = true
-//                                break
-//                            } else if (dcl.children[i] is KtParameter){
-//                                var parIsPublic:Boolean = false
-//                                if (dcl.children[i].firstChild != null && dcl.children[i].firstChild is KtDeclarationModifierList
-//                                    && dcl.children[i].firstChild.text == "public") {
-//                                    parIsPublic = true
-//                                }
-//                                if (parIsPublic) print(dcl.children[i].text)
-//                            } else print(dcl.children[i].text)
-//                            i++
-//                        }
 //
-//                        if (hasBody) print("{")
-//
-//                        while(i<dcl.children.size) {
-//                            dcl.children[i].accept(this)
-//                        }
-//
-//                        if (hasBody) {
-//                            for (j in dcl.children.size-1 downTo 0) {
-//                                if (dcl.children[i] is LeafPsiElement
-//                                    && dcl.children[i].text=="}") {
-//                                    print(dcl.children[i].text)
-//                                    break
-//                                }
-//                            }
-//                        }
-//
-//                    }
-//
-//
-//
-//                } else if (dcl is KtNamedFunction) {
-//                    var isPublic:Boolean = false
-//                    if (dcl.firstChild != null && dcl.firstChild is KtDeclarationModifierList &&
-//                        dcl.firstChild.text == "public") isPublic = true
-//                    if (isPublic) print(dcl.text)
-//                } else if (dcl is KtParameter){
-//                    if (dcl.getParent().getParent() is KtPrimaryConstructor)
-//                        print(dcl.text)
-//                } else dcl.acceptChildren(this)
-//            } else element.acceptChildren(this)
-//        }
 
-//        override fun visitDeclaration(dcl: KtDeclaration) {
-//            if (dcl is KtClass || dcl is KtObjectDeclaration) {
-//                var isPublic:Boolean = false
-//                if (dcl.firstChild != null && dcl.firstChild is KtDeclarationModifierList &&
-//                    dcl.firstChild.text == "public") isPublic = true
-//
-//                if (isPublic) {
-//                    var hasBody = false
-//                    var i = 0
-//                    while (i < dcl.children.size) {
-//                        if (dcl.children[i] is KtClassBody){
-//                            hasBody = true
-//                            break
-//                        } else if (dcl.children[i] is KtParameter){
-//                            var parIsPublic:Boolean = false
-//                            if (dcl.children[i].firstChild != null && dcl.children[i].firstChild is KtDeclarationModifierList
-//                                && dcl.children[i].firstChild.text == "public") {
-//                                parIsPublic = true
-//                            }
-//                            if (parIsPublic) print(dcl.children[i])
-//                        } else print(dcl.children[i])
-//                        i++
-//                    }
-//
-//                    if (hasBody) print("{")
-//
-//                    while(i<dcl.children.size) {
-//                        dcl.children[i].accept(this)
-//                    }
-//
-//                    if (hasBody) {
-//                        for (j in dcl.children.size-1 downTo 0) {
-//                            if (dcl.children[i] is LeafPsiElement
-//                                && dcl.children[i].text=="}") {
-//                                print(dcl.children[i].text)
-//                                break
-//                            }
-//                        }
-//                    }
-//
-//                }
-//
-//
-//
-//            } else if (dcl is KtNamedFunction) {
-//                var isPublic:Boolean = false
-//                if (dcl.firstChild != null && dcl.firstChild is KtDeclarationModifierList &&
-//                    dcl.firstChild.text == "public") isPublic = true
-//                if (isPublic) print(dcl.text)
-//            } else if (dcl is KtParameter){
-//                if (dcl.getParent().getParent() is KtPrimaryConstructor)
-//                        print(dcl.text)
-//            } else dcl.acceptChildren(this);
-//        }
-
-//        override fun visitKtElement(element: KtElement) {
-//            if (element is KtDeclaration){
-//                val dcl : KtDeclaration = element
-//                if (dcl is KtClass || dcl is KtObjectDeclaration) {
-//                    var isPublic:Boolean = false
-//                    if ((dcl.firstChild is KtDeclarationModifierList && dcl.firstChild.text=="public") || dcl.firstChild !is KtDeclarationModifierList)
-//                        isPublic = true
-//                    if (isPublic) {
-//                        var hasBody = false
-//                        var i = 0
-//                        while (i < dcl.children.size) {
-//                            if (dcl.children[i] is KtClassBody){
-//                                hasBody = true
-//                                break
-//                            } else if (dcl.children[i] is KtParameter){
-//                                var parIsPublic:Boolean = false
-//                                if (dcl.children[i].firstChild != null && dcl.children[i].firstChild is KtDeclarationModifierList
-//                                    && dcl.children[i].firstChild.text == "public") {
-//                                    parIsPublic = true
-//                                }
-//                                if (parIsPublic) print(dcl.children[i].text)
-//                            } else print(dcl.children[i].text)
-//                            i++
-//                        }
-//
-//                        if (hasBody) print("{")
-//
-//                        while(i<dcl.children.size) {
-//                            dcl.children[i].accept(this)
-//                        }
-//
-//                        if (hasBody) {
-//                            for (j in dcl.children.size-1 downTo 0) {
-//                                if (dcl.children[i] is LeafPsiElement
-//                                    && dcl.children[i].text=="}") {
-//                                    print(dcl.children[i].text)
-//                                    break
-//                                }
-//                            }
-//                        }
-//
-//                    }
-//
-//
-//
-//                } else if (dcl is KtNamedFunction) {
-//                    var isPublic:Boolean = false
-//                    if (dcl.firstChild != null && dcl.firstChild is KtDeclarationModifierList &&
-//                        dcl.firstChild.text == "public") isPublic = true
-//                    if (isPublic) print(dcl.text)
-//                } else if (dcl is KtParameter){
-//                    if (dcl.getParent().getParent() is KtPrimaryConstructor)
-//                        print(dcl.text)
-//                } else dcl.acceptChildren(this)
-//            } else element.acceptChildren(this)
-//        }
-
-
-        override fun visitElement(element: PsiElement) {
-            if (element is KtDeclaration){
-                val dcl = element
-                if (dcl is KtEnumEntry){
-                  print(dcl.text)
-                } else if (dcl is KtClass || dcl is KtObjectDeclaration) {
-
-                    var isPublic:Boolean = false
-                    val children = dcl.allChildren.toList()
-                    if (dcl.children[0] is KtDeclarationModifierList){
-                        if (!dcl.children[0].text.contains(Regex(".*private.*"))
-                            && !dcl.children[0].text.contains(Regex(".*protected.*"))
-                            && !dcl.children[0].text.contains(Regex(".*internal.*"))) isPublic = true
-                    } else isPublic = true
-
-                    if (isPublic) {
-                        var hasBody = false
-                        var i = 0
-
-                        while (i < children.size) {
-                            if (children[i] is KtClassBody){
-                                hasBody = true
-                                break
-                            } else if (children[i] is KtPrimaryConstructor){
-                                val paramList: KtParameterList = children[i].children[0] as KtParameterList
-                                val params = paramList.allChildren.toList()
-                                params.forEach {
-                                    if (it is KtParameter){
-                                        var parIsPublic:Boolean = false
-                                        if (it.children[0] is KtDeclarationModifierList){
-                                            if (!it.children[0].text.contains(Regex(".*private.*"))
-                                                && !it.children[0].text.contains(Regex(".*protected.*"))
-                                                && !it.children[0].text.contains(Regex(".*internal.*"))) parIsPublic = true
-                                        } else parIsPublic = true
-
-                                        if (parIsPublic) print(it.text)
-                                    } else {
-                                        print(it.text)
-                                    }
-                                }
-
-
-                            } else if (children[i] !is PsiComment) print(children[i].text)
-                            i++
-                        }
-
-
-                        if (hasBody){
-                            val classBodyChildren = children[children.size-1].allChildren.toList()
-                            classBodyChildren.forEach {
-                                if (it is LeafPsiElement) print(it.text)
-                                else it.accept(this)
-                            }
-                        }
-
-                        println()
-
-
-
-
-
-
-                    }
-
-
-
-                } else if (dcl is KtNamedFunction) {
-                    var isPublic:Boolean = false
-                    if (dcl.children[0] is KtDeclarationModifierList){
-                        if (!dcl.children[0].text.contains(Regex(".*private.*"))
-                            && !dcl.children[0].text.contains(Regex(".*protected.*"))
-                            && !dcl.children[0].text.contains(Regex(".*internal.*"))) isPublic = true
-                    } else isPublic = true
-                    if (isPublic) {
-                        val children = dcl.allChildren.toList()
-                        for(i in children.indices){
-                            if (children[i] !is KtBlockExpression && children[i] !is PsiComment) print(children[i].text)
-                            else if (children[i] is KtBlockExpression) break
-                        }
-                        println()
-                    }
-                } else if (dcl is KtParameter){
-                    if (dcl.getParent().getParent() is KtPrimaryConstructor)
+            override fun visitElement(element: PsiElement) {
+                if (element is KtDeclaration) {
+                    val dcl = element
+                    if (dcl is KtEnumEntry) {
                         print(dcl.text)
-                } else if (dcl is KtProperty){
-                    var isPublic:Boolean = false
-                    if (dcl.children[0] is KtDeclarationModifierList){
-                        if (!dcl.children[0].text.contains(Regex(".*private.*"))
-                            && !dcl.children[0].text.contains(Regex(".*protected.*"))
-                            && !dcl.children[0].text.contains(Regex(".*internal.*"))) isPublic = true
-                    } else isPublic = true
-                    if (isPublic) {
+                    } else if (dcl is KtClass || dcl is KtObjectDeclaration) {
+
+                        var isPublic: Boolean = false
                         val children = dcl.allChildren.toList()
-                        for(i in children.indices){
-                            if (children[i] !is PsiComment) print(children[i].text)
+                        if (dcl.children.size > 0 && dcl.children[0] is KtDeclarationModifierList) {
+                            if (!dcl.children[0].text.contains(Regex(".*private.*"))
+                                && !dcl.children[0].text.contains(Regex(".*protected.*"))
+                                && !dcl.children[0].text.contains(Regex(".*internal.*"))
+                            ) isPublic = true
+                        } else isPublic = true
+
+                        if (isPublic) {
+                            var hasBody = false
+                            var i = 0
+
+                            while (i < children.size) {
+                                if (children[i] is KtClassBody) {
+                                    hasBody = true
+                                    break
+                                } else if (children[i] is KtPrimaryConstructor) {
+                                    var paramListChildIndex = 0
+                                    if (children[i].children[0] !is KtParameterList){
+                                        paramListChildIndex = 1
+                                        var constrIsPublic: Boolean = false
+                                        if (!children[i].children[0].text.contains(Regex(".*private.*"))
+                                            && !children[i].children[0].text.contains(Regex(".*protected.*"))
+                                            && !children[i].children[0].text.contains(Regex(".*internal.*"))
+                                        ) constrIsPublic = true
+                                        if (constrIsPublic){
+                                            print(children[i].children[0].text)
+                                        } else {
+                                            i++
+                                            continue
+                                        }
+                                    }
+                                    val paramList: KtParameterList = children[i].children[paramListChildIndex] as KtParameterList
+                                    val params = paramList.allChildren.toList()
+                                    params.forEach {
+                                        if (it is KtParameter) {
+                                            var parIsPublic: Boolean = false
+                                            if (it.children[0] is KtDeclarationModifierList) {
+                                                if (!it.children[0].text.contains(Regex(".*private.*"))
+                                                    && !it.children[0].text.contains(Regex(".*protected.*"))
+                                                    && !it.children[0].text.contains(Regex(".*internal.*"))
+                                                ) parIsPublic = true
+                                            } else parIsPublic = true
+
+                                            if (parIsPublic) print(it.text)
+                                        } else if (it !is PsiComment){
+                                            print(it.text)
+                                        }
+                                    }
+
+
+                                } else if (children[i] !is PsiComment) print(children[i].text)
+                                i++
+                            }
+
+
+                            if (hasBody) {
+                                val classBodyChildren = children[children.size - 1].allChildren.toList()
+                                classBodyChildren.forEach {
+                                    if (it is LeafPsiElement) print(it.text)
+                                    else if (it !is PsiComment) it.accept(this)
+                                }
+                            }
+
+                            println()
+
+
                         }
-                        println()
-                    }
-                }
-                else dcl.acceptChildren(this)
-            } else element.acceptChildren(this)
 
 
+                    } else if (dcl is KtNamedFunction) {
+                        var isPublic: Boolean = false
+                        if (dcl.children.size > 0 && dcl.children[0] is KtDeclarationModifierList) {
+                            if (!dcl.children[0].text.contains(Regex(".*private.*"))
+                                && !dcl.children[0].text.contains(Regex(".*protected.*"))
+                                && !dcl.children[0].text.contains(Regex(".*internal.*"))
+                            ) isPublic = true
+                        } else isPublic = true
+                        if (isPublic) {
+                            val children = dcl.allChildren.toList()
+                            for (i in children.indices) {
+                                if (children[i] !is KtBlockExpression && children[i] !is PsiComment
+                                    && children[i] !is KtCallExpression && children[i].text != "=") print(children[i].text)
+                                else if (children[i] is KtBlockExpression || children[i].text == "=") break
+                            }
+                            println()
+                        }
+                    } else if (dcl is KtParameter) {
+                        if (dcl.getParent().getParent() is KtPrimaryConstructor)
+                            print(dcl.text)
+                    } else if (dcl is KtProperty) {
+                        var isPublic: Boolean = false
+                        if (dcl.children.size > 0 && dcl.children[0] is KtDeclarationModifierList) {
+                            if (!dcl.children[0].text.contains(Regex(".*private.*"))
+                                && !dcl.children[0].text.contains(Regex(".*protected.*"))
+                                && !dcl.children[0].text.contains(Regex(".*internal.*"))
+                            ) isPublic = true
+                        } else isPublic = true
+                        if (isPublic) {
+                            val children = dcl.allChildren.toList()
+                            for (i in children.indices) {
+                                if (children[i] !is PsiComment) print(children[i].text)
+                            }
+                            println()
+                        }
+                    } else dcl.acceptChildren(this)
+                } else element.acceptChildren(this)
 
 
-
-        }
-
+            }
 
 
+        })
 
+    }
 
-
-    })
 
 
 
